@@ -1,0 +1,1 @@
+https://p8zh.adj.st/example?Page=Product&ContentId=123456789&adjust_deeplink=ty%3A%2F%2F%3FContentId%3D123456789&adjust_redirect=https%3A%2F%2Fwww.trendyol.com%2Fexample-product-p-123456789%3FboutiqueId%3D61%26merchantId%3D100000%26utm_source%3Dshare&adj_og_title=Example%20product

@@ -1,97 +1,89 @@
 # p8zh Direct
 
-A small Firefox extension that automatically opens the website embedded in a
-`p8zh.adj.st` link's `adjust_redirect` query parameter. The desktop installation
-below requires Firefox 140 or newer. It runs in the background; there is no
-toolbar button to click.
+A Firefox extension that opens the website embedded in `p8zh.adj.st` share links.
+It reads the `adjust_redirect` parameter and redirects automatically, without a
+toolbar button or setup screen.
 
-## Install for immediate use
+```text
+https://p8zh.adj.st/example?adjust_redirect=https%3A%2F%2Fexample.com%2Fproduct
+                                      ↓
+https://example.com/product
+```
 
-The [latest release](https://github.com/wenekar/p8zh-redirector/releases/latest)
-also includes a download link for the unsigned XPI. Select that file in step 3
-if you prefer it to installing from the source folder.
+## Installation
 
-1. [Download the source ZIP](https://github.com/wenekar/p8zh-redirector/archive/refs/heads/main.zip)
-   and extract it, or clone this repository.
-2. In Firefox, open **about:debugging#/runtime/this-firefox**.
-3. Choose **Load Temporary Add-on…** and select `extension/manifest.json` inside
-   the extracted folder.
-4. Open a `p8zh.adj.st` link, including the example in `tests/fixtures/example-url.txt`.
-   Firefox should go directly to its embedded destination.
+Requires **Firefox 140 or newer on desktop**. The extension is not yet listed on
+Mozilla Add-ons; current GitHub builds are unsigned.
 
-You can also build `dist/p8zh-direct-1.0.0.xpi` using `python3 scripts/package.py`
-and select that file in step 3. If Firefox asks for access to `p8zh.adj.st`, allow
-it. If redirection is disabled, check this extension's site permissions in
-**about:addons**. Private windows require enabling **Run in Private Windows** in
-the extension's settings.
+1. Open the [latest release](https://github.com/wenekar/p8zh-redirector/releases/latest)
+   and download the XPI using the link in its release notes.
+2. In Firefox, open `about:debugging#/runtime/this-firefox`.
+3. Choose **Load Temporary Add-on…** and select the downloaded `.xpi`.
+4. Open a `p8zh.adj.st` link. Firefox opens its embedded website destination.
 
-**Temporary add-ons are removed when Firefox closes.** This build is unsigned,
-so it cannot be installed permanently in regular Firefox. For permanent use,
-submit the contents of `extension/` (or the XPI) to
-[Mozilla Add-ons](https://addons.mozilla.org/developers/) for signing. Choose an
-unlisted distribution if you want to keep the add-on off the public directory,
-then install the signed XPI Mozilla provides. No Firefox security settings need
-to be changed.
+Temporary add-ons are removed when Firefox closes. Permanent installation in
+regular Firefox requires a Mozilla-signed build. See the
+[AMO submission guide](docs/amo.md) for the submission process.
+
+To try the source directly, clone this repository or extract a
+[source ZIP](https://github.com/wenekar/p8zh-redirector/archive/refs/heads/main.zip),
+then select `extension/manifest.json` in step 3. No build or dependencies are
+needed to load the source.
+
+If links do not redirect, check the extension's access to `p8zh.adj.st` in
+`about:addons` and reload the link. Private windows require enabling **Run in
+Private Windows** in the extension's settings.
 
 ## Behavior
 
-- Handles HTTP and HTTPS navigation to the exact hostname `p8zh.adj.st`.
-- Redirects before the intermediary page loads using Firefox's blocking
-  `webRequest.onBeforeRequest` API, including links pasted in the address bar,
-  clicked links, and links opened in new tabs.
-- Reads `adjust_redirect` with `URLSearchParams`, which decodes the outer query
-  parameter once. Preserves the destination's query parameters, URL escapes, and
-  fragment; Firefox applies normal URL normalization.
-- Follows up to five nested p8zh wrappers without a redirect loop.
-- Leaves missing or invalid destinations unchanged. Only absolute HTTP and HTTPS
-  destinations without embedded usernames or passwords are accepted. App deep
-  links such as `ty://` are not website destinations.
-- Only redirects top-level pages. Images, scripts, API requests, and embedded
-  frames are unaffected.
-- Does not resolve links that lack an embedded `adjust_redirect` destination.
-- Does not remove tracking parameters from the destination URL.
+- Intercepts top-level HTTP and HTTPS navigation to the exact host `p8zh.adj.st`.
+- Uses the first `adjust_redirect` parameter and decodes each wrapper once.
+- Preserves the destination's query parameters, URL escapes, and fragment,
+  subject to Firefox's normal URL normalization.
+- Resolves up to five nested p8zh links.
+- Leaves navigation unchanged when the destination is missing, malformed,
+  relative, uses an app scheme such as `ty://`, contains embedded credentials,
+  or exceeds the nesting limit.
 
-For the supplied example, the destination is the Trendyol product page at:
-
-```text
-https://www.trendyol.com/Heifer/Uzaktan-Kumandali-Ayakli-Kanatsiz-Fan---35-Watt-p-1155576039
-```
-
-The original destination's `boutiqueId`, `merchantId`, and other query
-parameters are retained.
-
-## Validation
-
-The nine automated tests cover the complete supplied example, URL encoding,
-nested wrappers, invalid destinations, source host matching, and request scope.
-The extension also passed Mozilla's `web-ext lint` with no errors, warnings, or
-notices. A Firefox 153 smoke test verified direct navigation, clicks from another
-origin, interception before the wrapper is contacted, unchanged embedded frames,
-and normal navigation when the destination is missing. Browser checks used a
-local test server; they did not open the live Trendyol product page.
+Images, scripts, API requests, and embedded frames are unaffected. Links without
+an embedded website destination cannot be resolved locally. Destination tracking
+parameters are preserved.
 
 ## Permissions and privacy
 
-The extension requests `webRequest` and `webRequestBlocking` to redirect page
-requests, plus host access scoped to `p8zh.adj.st`. It does not request access to
-all websites, browsing history, cookies, or storage. It contains no analytics,
-telemetry, remote code, or network fetches, and does not collect or send data.
-The destination website still receives its normal navigation request.
+| Permission | Purpose |
+| --- | --- |
+| `webRequest` | Observe matching navigation requests. |
+| `webRequestBlocking` | Redirect before the intermediary page loads. |
+| `*://p8zh.adj.st/*` | Limit access to the supported link host. |
+
+The extension does not collect, store, or transmit browsing data. URL extraction
+happens locally; the destination receives a normal browser navigation, including
+its existing query parameters. See [PRIVACY.md](PRIVACY.md) for details.
 
 ## Development
 
-The extension itself has no runtime dependencies. Node.js 22+ runs the tests;
-Python 3 builds the archives. `web-ext` is used only for Mozilla's extension
-validation.
+Use Node.js 22+ and Python 3.10+. There are no runtime dependencies, bundlers, or
+transpilers. `web-ext` is a development dependency used to validate and run the
+extension.
 
 ```sh
 npm ci
-npm test
-npm run lint:extension
+npm run check
 npm run build
 ```
 
-Install development tooling with `npm install` if no lockfile is present.
-Build output is in `dist/`. The XPI includes `manifest.json`, `background.js`, and
-the MIT license; tests and development tools are included only in the source
-bundle.
+`npm run check` runs the JavaScript tests, packaging tests, and Mozilla extension
+validation. `npm run build` writes a versioned unsigned XPI and source ZIP to
+`dist/`. The version comes from `extension/manifest.json` and must match
+`package.json`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the project structure, manual browser
+checks, and release steps. Report problems through
+[GitHub Issues](https://github.com/wenekar/p8zh-redirector/issues), including your
+Firefox version and a minimal link with personal tracking values removed.
+
+## License
+
+[MIT](LICENSE). Independent project; not affiliated with Mozilla, Adjust, or
+Trendyol.

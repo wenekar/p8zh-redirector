@@ -2,10 +2,25 @@
   "name": "p8zh-direct",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "A Firefox extension that skips p8zh.adj.st redirect links.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wenekar/p8zh-redirector.git"
+  },
+  "homepage": "https://github.com/wenekar/p8zh-redirector#readme",
+  "bugs": "https://github.com/wenekar/p8zh-redirector/issues",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": "node --test tests/*.test.cjs",
+    "test": "npm run test:unit && npm run test:build",
+    "test:unit": "node --test tests/*.test.js",
+    "test:build": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "lint:extension": "web-ext lint --source-dir extension --warnings-as-errors",
+    "check": "npm test && npm run lint:extension",
+    "start": "web-ext run --source-dir extension",
     "build": "python3 scripts/package.py"
   },
   "devDependencies": {

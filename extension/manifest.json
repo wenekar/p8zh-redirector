@@ -3,10 +3,12 @@
   "name": "p8zh Direct",
   "version": "1.0.0",
   "description": "Open the website embedded in p8zh.adj.st links automatically.",
+  "homepage_url": "https://github.com/wenekar/p8zh-redirector",
   "permissions": ["webRequest", "webRequestBlocking"],
   "host_permissions": ["*://p8zh.adj.st/*"],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["background.js"],
+    "type": "module"
   },
   "browser_specific_settings": {
     "gecko": {
