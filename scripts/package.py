@@ -11,6 +11,7 @@ with ZipFile(DIST / "p8zh-direct-1.0.0.xpi", "w", ZIP_DEFLATED) as archive:
     for file in sorted((ROOT / "extension").rglob("*")):
         if file.is_file():
             archive.write(file, file.relative_to(ROOT / "extension"))
+    archive.write(ROOT / "LICENSE", "LICENSE")
 
 with ZipFile(DIST / "p8zh-direct-source.zip", "w", ZIP_DEFLATED) as archive:
     for file in sorted(ROOT.rglob("*")):

@@ -7,6 +7,10 @@ toolbar button to click.
 
 ## Install for immediate use
 
+The [latest release](https://github.com/wenekar/p8zh-redirector/releases/latest)
+also includes a download link for the unsigned XPI. Select that file in step 3
+if you prefer it to installing from the source folder.
+
 1. [Download the source ZIP](https://github.com/wenekar/p8zh-redirector/archive/refs/heads/main.zip)
    and extract it, or clone this repository.
 2. In Firefox, open **about:debugging#/runtime/this-firefox**.
@@ -88,5 +92,6 @@ npm run build
 ```
 
 Install development tooling with `npm install` if no lockfile is present.
-Build output is in `dist/`. Only `manifest.json` and `background.js` are included
-in the XPI; tests and development tools are included only in the source bundle.
+Build output is in `dist/`. The XPI includes `manifest.json`, `background.js`, and
+the MIT license; tests and development tools are included only in the source
+bundle.
