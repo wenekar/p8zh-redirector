@@ -29,7 +29,7 @@ const IGNORED_NAMES = new Set([
 ]);
 const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 
-/**
+/** Narrows a JSON value to an object.
  * @param {unknown} value
  * @param {string} label
  * @returns {Record<string, unknown>}
@@ -41,7 +41,7 @@ function object(value, label) {
   return /** @type {Record<string, unknown>} */ (value);
 }
 
-/**
+/** Parses a JSON object and labels parse errors.
  * @param {Uint8Array} bytes
  * @param {string} label
  * @returns {Record<string, unknown>}
@@ -56,7 +56,11 @@ function parseJson(bytes, label) {
   return object(value, label);
 }
 
-/** @param {string} root @param {string} entry */
+/** Resolves a source entry inside the project root.
+ * @param {string} root
+ * @param {string} entry
+ * @returns {string}
+ */
 function projectPath(root, entry) {
   const path = resolve(root, entry);
   const local = relative(root, path);
@@ -74,7 +78,7 @@ function projectPath(root, entry) {
   return path;
 }
 
-/**
+/** Collects files from configured source entries.
  * @param {string} root
  * @param {string[]} entries
  * @returns {Promise<Map<string, Uint8Array>>}
@@ -83,11 +87,13 @@ async function collectFiles(root, entries) {
   /** @type {Map<string, Uint8Array>} */
   const files = new Map();
 
-  /** @param {string} path @returns {Promise<void>} */
+  /** Collects regular files beneath a source path.
+   * @param {string} path
+   * @returns {Promise<void>}
+   */
   async function visit(path) {
     const info = await lstat(path);
     const name = relative(root, path).split(sep).join("/");
-    // realpath also catches a symlink in an explicitly listed entry's parents.
     if (info.isSymbolicLink() || (await realpath(path)) !== path) {
       throw new Error(`Symbolic links are not supported in build inputs: ${name}`);
     }
@@ -110,7 +116,7 @@ async function collectFiles(root, entries) {
   return files;
 }
 
-/**
+/** Returns a required file from the source set.
  * @param {Map<string, Uint8Array>} files
  * @param {string} name
  * @returns {Uint8Array}
@@ -123,9 +129,12 @@ function requiredFile(files, name) {
   return bytes;
 }
 
-/** @param {Map<string, Uint8Array>} files @param {string} [prefix] */
+/** Creates a deterministically ordered ZIP archive.
+ * @param {Map<string, Uint8Array>} files
+ * @param {string} [prefix]
+ * @returns {Uint8Array}
+ */
 function archive(files, prefix = "") {
-  // Lexical ordering is independent of the host's locale.
   const sorted = [...files].sort(([left], [right]) =>
     left < right ? -1 : left > right ? 1 : 0,
   );
@@ -140,10 +149,7 @@ function archive(files, prefix = "") {
   );
 }
 
-/**
- * Build from one input snapshot. Validate and compress both archives before any
- * output is written; move each completed artifact into place atomically.
- *
+/** Builds versioned XPI and source archives from a project directory.
  * @param {string} directory
  * @returns {Promise<{xpi: string, source: string}>}
  */

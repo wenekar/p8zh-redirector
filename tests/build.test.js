@@ -17,12 +17,18 @@ import test from "node:test";
 import { strFromU8, unzipSync } from "fflate";
 import { buildProject } from "../scripts/lib/build.js";
 
-/** @param {string} root @param {string} name @param {unknown} value */
+/** Writes a JSON fixture.
+ * @param {string} root
+ * @param {string} name
+ * @param {unknown} value
+ */
 async function writeJson(root, name, value) {
   await writeFile(join(root, name), JSON.stringify(value));
 }
 
-/** @param {import("node:test").TestContext} t */
+/** Creates a temporary project fixture.
+ * @param {import("node:test").TestContext} t
+ */
 async function fixture(t) {
   const root = await realpath(await mkdtemp(join(tmpdir(), "p8zh-build-")));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -66,7 +72,10 @@ async function fixture(t) {
   return { root, pkg, manifest, lock };
 }
 
-/** @param {Uint8Array} bytes @param {string} name */
+/** Reads a named entry from a ZIP archive.
+ * @param {Uint8Array} bytes
+ * @param {string} name
+ */
 function readEntry(bytes, name) {
   const value = unzipSync(bytes)[name];
   assert.ok(value, `archive must contain ${name}`);

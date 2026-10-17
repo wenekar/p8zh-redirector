@@ -2,7 +2,7 @@ export const REDIRECT_HOST = "p8zh.adj.st";
 
 const MAX_WRAPPERS = 5;
 
-/**
+/** Parses an HTTP(S) URL without embedded credentials.
  * @param {string | null} value
  * @returns {URL | null}
  */
@@ -19,14 +19,9 @@ function parseWebUrl(value) {
   return url;
 }
 
-/**
- * Extract a website destination from up to five nested p8zh wrappers.
- *
- * URLSearchParams decodes each wrapper once. Decoding the destination again
- * would corrupt its own escaped query parameters and path segments.
- *
- * @param {string} sourceUrl - The URL of a top-level navigation.
- * @returns {string | null} The destination, or null to leave navigation alone.
+/** Extracts the HTTP(S) destination from up to five nested p8zh URLs.
+ * @param {string} sourceUrl
+ * @returns {string | null}
  */
 export function extractTargetUrl(sourceUrl) {
   let current = parseWebUrl(sourceUrl);

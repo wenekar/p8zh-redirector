@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { extractTargetUrl } from "../extension/redirect.js";
 
-/** @param {string} target */
+/** Wraps a URL in a p8zh share link.
+ * @param {string} target
+ */
 const wrap = (target) =>
   `https://p8zh.adj.st/example?adjust_redirect=${encodeURIComponent(target)}`;
 
