@@ -1,5 +1,9 @@
 import { extractTargetUrl, REDIRECT_HOST } from "./redirect.js";
 
+/**
+ * @param {browser.webRequest._OnBeforeRequestDetails} details
+ * @returns {browser.webRequest.BlockingResponse}
+ */
 function redirectRequest(details) {
   if (details.type !== "main_frame") {
     return {};

@@ -1,76 +1,90 @@
 # Contributing
 
-## Setup and checks
+Use Node.js 22.14+ and npm. Firefox is needed only for browser tests and interactive
+development. The extension runs as native JavaScript, with no runtime dependencies or
+compilation step.
 
-Use Node.js 22+, Python 3.10+, and Firefox 140+ on desktop.
+## Setup
 
 ```sh
 git clone https://github.com/wenekar/p8zh-redirector.git
 cd p8zh-redirector
 npm ci
 npm run check
-npm run build
 ```
 
-`npm run test:unit` tests URL extraction and the Firefox request handler using
-Node's built-in test runner. `npm run test:build` checks archive contents,
-version consistency, and reproducibility using Python's standard library.
-`npm run lint:extension` runs Mozilla's extension validator. No live product
-page is contacted by these tests.
+## Checks
 
-Run `npm start` to launch Firefox with the extension using `web-ext`, or load
-`extension/manifest.json` through `about:debugging` as described in the README.
+| Command                | Purpose                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `npm run check`        | Run every source check, unit test, packaging test, and Mozilla validation.           |
+| `npm run format`       | Apply the repository's Prettier formatting.                                          |
+| `npm run lint`         | Check JavaScript with ESLint; warnings fail the check.                               |
+| `npm run typecheck`    | Check JavaScript and JSDoc with TypeScript's strict settings, without emitting code. |
+| `npm run test:unit`    | Run URL extraction tests.                                                            |
+| `npm run test:build`   | Run archive and build-failure regression tests.                                      |
+| `npm run test:browser` | Build and load the XPI in headless Firefox using Selenium.                           |
+| `npm run build`        | Write the unsigned XPI and source ZIP to `dist/`.                                    |
 
-## Project structure
+`npm test` runs unit and packaging tests and checks 100% statement, branch, function,
+and line coverage for **`extension/redirect.js`**. This coverage target applies to the
+URL parser; the actual Firefox registration is exercised by browser tests.
 
-| Path | Purpose |
-| --- | --- |
-| `extension/redirect.js` | Pure URL parsing and nested-wrapper handling. |
-| `extension/background.js` | Synchronous registration of the Firefox request listener. |
-| `extension/manifest.json` | Extension metadata, permissions, and compatibility. |
-| `tests/` | JavaScript tests, packaging tests, and synthetic URL fixtures. |
-| `scripts/package.py` | Versioned, reproducible XPI and source ZIP generation. |
-| `downloads/` | Historical release binaries; excluded from new source bundles. |
+The browser tests use a local HTTP server and map `p8zh.adj.st` to loopback in an
+isolated Firefox profile. They check direct navigation, clicked links, new tabs, nested
+wrappers, URL encoding, frames, and unresolved links. They do not open live shopping
+pages. Selenium Manager locates or downloads geckodriver. Set `FIREFOX_BINARY` and,
+optionally, `GECKODRIVER` to use specific executable paths.
 
-Keep URL extraction independent of Firefox APIs. When changing redirect behavior,
-cover the affected URL case and preserve destination encoding. Use synthetic
-examples with personal tracking values removed.
+CI runs source checks and archive tests on Linux and Windows, and browser tests on
+Firefox 140.0 and the current Firefox release. `npm start` launches Firefox with the
+unpacked extension for interactive development.
 
-## Manual Firefox checks
+## Code structure
 
-After changes to the manifest or background handler, verify:
+- `extension/redirect.js` contains URL extraction and has no Firefox dependency.
+- `extension/background.js` registers the typed, synchronous request handler.
+- `scripts/build.js` is the build command; `scripts/lib/build.js` validates inputs and
+  creates archives with `fflate`.
+- `tests/` covers URL behavior and packaging; `tests/browser/` exercises the XPI.
+- `types/selenium-webdriver.d.ts` supplies a current Selenium API missing from the
+  upstream type definitions. It is used only by development checks.
 
-1. Pasting a p8zh URL with an encoded HTTPS `adjust_redirect` opens its destination.
-2. Clicking the same URL from another website and opening it in a new tab work.
-3. Destination query parameters, percent escapes, and fragments survive.
-4. Missing destinations and `ty://` app destinations keep normal navigation.
-5. Embedded frames do not redirect the enclosing tab.
+Keep parsing local and preserve the destination's existing encoding. Cover changed
+behavior with a focused example. Use synthetic fixtures without personal tracking
+values. Avoid adding abstractions or dependencies to the extension runtime for build or
+test concerns.
 
-Enable the extension's private-window permission before checking private windows.
-Use a controlled destination for browser tests instead of a live shopping page.
+## Packaging
 
-## Builds and releases
+`package.json`'s `files` array is the source archive's explicit input list. A missing
+listed input is an error. Symlinks, including symlinked parent directories, are
+rejected. Git metadata, installed dependencies, caches, existing downloads, and output
+archives are excluded from the configured source inputs.
 
-Build without installing npm dependencies using `python3 scripts/package.py`.
-The script reads the version from the manifest and requires it to match
-`package.json`. It writes:
+The build reads both distributions from the same source snapshot. It validates all
+inputs and compresses both archives before writing output, then stages files in `dist/`
+and atomically replaces each completed artifact. Input validation failures leave
+previous artifacts untouched. ZIP file order, timestamps, and permissions are fixed for
+reproducible builds.
 
 ```text
 dist/p8zh-direct-<version>.xpi
 dist/p8zh-direct-<version>-source.zip
 ```
 
-The XPI contains the extension files and the MIT license. The source ZIP contains
-the documented project inputs; Git metadata, dependencies, caches, previous
-release downloads, and build outputs are excluded. ZIP timestamps, file modes,
-and ordering are fixed so repeated builds with the same inputs and compression
-toolchain produce the same bytes.
+The XPI contains the extension files and MIT license. The source ZIP includes the code,
+lockfile, test fixtures, and check configuration needed to rebuild it after `npm ci`.
 
-For a release, update both versions and the changelog, refresh the lockfile with
-`npm install --package-lock-only`, and run the checks and build. Commit the
-release changes, then create a version tag and a GitHub release pointing to that
-commit. Link or attach the unsigned XPI and source ZIP, and state the temporary
-installation requirement. Keep published version tags and artifacts unchanged.
+## Releases
 
-Publishing on Mozilla Add-ons is a separate step covered in
-[docs/amo.md](docs/amo.md).
+Use a numeric `major.minor.patch` version, with each component between 0 and 65535 and
+no leading zeros. Set matching versions in `package.json` and `extension/manifest.json`,
+then run `npm install --package-lock-only` to update both lockfile version fields. The
+build checks all four values.
+
+Update the changelog, run `npm run check`, `npm run test:browser`, and `npm run build`,
+and commit the release changes. Create a version tag and GitHub release pointing to that
+commit. Link or attach the XPI and source ZIP, and explain that unsigned builds require
+temporary installation. Keep published tags and artifacts unchanged. Mozilla signing is
+covered in [docs/amo.md](docs/amo.md).

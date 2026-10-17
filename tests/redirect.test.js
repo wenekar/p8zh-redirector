@@ -3,11 +3,15 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { extractTargetUrl } from "../extension/redirect.js";
 
+/** @param {string} target */
 const wrap = (target) =>
   `https://p8zh.adj.st/example?adjust_redirect=${encodeURIComponent(target)}`;
 
 test("extracts the website from a share link containing an app deep link", () => {
-  const source = readFileSync(new URL("./fixtures/share-url.txt", import.meta.url), "utf8").trim();
+  const source = readFileSync(
+    new URL("./fixtures/share-url.txt", import.meta.url),
+    "utf8",
+  ).trim();
   const expected =
     "https://www.trendyol.com/example-product-p-123456789" +
     "?boutiqueId=61&merchantId=100000&utm_source=share";
@@ -31,7 +35,21 @@ test("handles HTTP, non-default ports, and any parameter position", () => {
 
 test("applies normal URL normalization for Unicode and hostnames", () => {
   const target = "https://EXAMPLE.COM/ürün?q=çay";
-  assert.equal(extractTargetUrl(wrap(target)), new URL(target).href);
+  assert.equal(
+    extractTargetUrl(wrap(target)),
+    "https://example.com/%C3%BCr%C3%BCn?q=%C3%A7ay",
+  );
+});
+
+test("stops at a website even if it also has an adjust_redirect parameter", () => {
+  const target = "https://example.com/?adjust_redirect=https%3A%2F%2Fother.example";
+  assert.equal(extractTargetUrl(wrap(target)), target);
+});
+
+test("an empty first destination is not replaced by a later duplicate", () => {
+  const source =
+    "https://p8zh.adj.st/?adjust_redirect=&adjust_redirect=https%3A%2F%2Fexample.com";
+  assert.equal(extractTargetUrl(source), null);
 });
 
 test("unwraps five nested links and leaves deeper chains unchanged", () => {
