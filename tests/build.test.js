@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { strFromU8, unzipSync } from "fflate";
-import { buildProject } from "../scripts/lib/build.js";
+import { buildProject } from "../scripts/build.js";
 
 /** Writes a JSON fixture.
  * @param {string} root

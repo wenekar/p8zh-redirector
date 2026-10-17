@@ -4,7 +4,15 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { By, until } from "selenium-webdriver";
 import { Driver, Options, ServiceBuilder } from "selenium-webdriver/firefox.js";
-import { buildProject } from "../../scripts/lib/build.js";
+import { buildProject } from "../../scripts/build.js";
+
+/** @typedef {Driver & {
+ * installWebExtension: (
+ *   extension: string,
+ *   options?: { permanent?: boolean; allowPrivateBrowsing?: boolean },
+ * ) => Promise<unknown>
+ * }} ExtensionDriver
+ */
 
 test("the packaged extension redirects in Firefox", { timeout: 180_000 }, async (t) => {
   /** @type {string[]} */
@@ -54,11 +62,12 @@ test("the packaged extension redirects in Firefox", { timeout: 180_000 }, async 
     ? new ServiceBuilder(process.env.GECKODRIVER).build()
     : undefined;
   const driver = Driver.createSession(options, service);
+  const extensionDriver = /** @type {ExtensionDriver} */ (driver);
   t.after(() => driver.quit());
   await driver.manage().setTimeouts({ pageLoad: 15_000, script: 5_000 });
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const { xpi } = await buildProject(root);
-  await driver.installWebExtension(xpi, { permanent: false });
+  await extensionDriver.installWebExtension(xpi, { permanent: false });
   t.diagnostic(`Firefox ${(await driver.getCapabilities()).get("browserVersion")}`);
 
   function assertWrapperNotContacted() {

@@ -44,11 +44,9 @@ unpacked extension for interactive development.
 
 - `extension/redirect.js` contains URL extraction and has no Firefox dependency.
 - `extension/background.js` registers the typed, synchronous request handler.
-- `scripts/build.js` is the build command; `scripts/lib/build.js` validates inputs and
-  creates archives with `fflate`.
+- `scripts/build.js` validates inputs and creates the XPI and source archives with
+  `fflate`.
 - `tests/` covers URL behavior and packaging; `tests/browser/` exercises the XPI.
-- `types/selenium-webdriver.d.ts` supplies a current Selenium API missing from the
-  upstream type definitions. It is used only by development checks.
 
 Keep parsing local and preserve the destination's existing encoding. Cover changed
 behavior with a focused example. Use synthetic fixtures without personal tracking

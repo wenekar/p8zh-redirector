@@ -62,7 +62,6 @@
     "package-lock.json",
     "scripts",
     "tests",
-    "tsconfig.json",
-    "types"
+    "tsconfig.json"
   ]
 }
